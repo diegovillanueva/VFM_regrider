@@ -12,7 +12,7 @@ import InfoFlags as settings
 class varInfo():
  def __init__(s):
 	#defaults for debug
-	s.fileName = "/vols/fs1/scratch/ortiz/WIFI_AUS_CALIOP_Clay/2016_12/CAL_LID_L2_333mCLay-ValStage1-V3-40.2016-12-01T01-24-58ZN.hdf"
+	s.fileName = "CAL_LID_L2_333mCLay-ValStage1-V3-40.2020-01-29T20-56-48ZN.hdf"
 	s.varName  = "Feature_Classification_Flags"
 	#get flags 6-7 and average them as: missing,1,0,1
 	s.VFMflagStart=settings.VFMflagStart
@@ -46,6 +46,7 @@ class getFlag(varInfo):
  def getFileNameShort(s,debug=False):
 	base=os.path.basename(s.fileName)
 	fn=os.path.splitext(base)[0]
+	#fn=base
 	if debug:
 		return "test"
 	else:

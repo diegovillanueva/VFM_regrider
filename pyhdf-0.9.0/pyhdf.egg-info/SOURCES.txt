@@ -1,0 +1,17 @@
+README.rst
+setup.cfg
+setup.py
+pyhdf/HC.py
+pyhdf/HDF.py
+pyhdf/SD.py
+pyhdf/V.py
+pyhdf/VS.py
+pyhdf/__init__.py
+pyhdf/error.py
+pyhdf/hdfext.py
+pyhdf/hdfext_wrap.c
+pyhdf/six.py
+pyhdf.egg-info/PKG-INFO
+pyhdf.egg-info/SOURCES.txt
+pyhdf.egg-info/dependency_links.txt
+pyhdf.egg-info/top_level.txt
