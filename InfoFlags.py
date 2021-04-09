@@ -2,6 +2,10 @@
 import numpy as np
 from InfoVert import *
 
+FlagName="Feature_Classification_Flags"
+FlagName="icnc_5um"
+FlagName="icnc_100um"
+
 #how many pixels to skip (it while take year otherwise to process all 60k pixels per orbit)
 debugOffset=10
 
@@ -12,6 +16,11 @@ VFMflagDef="AerFrac"
 VFMflagDef="CC"
 VFMflagDef="CI2CT"
 
+VFMflagDef=FlagName
+
+VFMflagStart=0 #get flags 6-7 
+VFMflagFinish=0
+flagValues=[np.nan] #average them as: missing,1,0,1
 
 if VFMflagDef=="CI2CT":
 	#Cloud_Ice_to_total_Cloud"

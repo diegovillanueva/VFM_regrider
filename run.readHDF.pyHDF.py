@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #!/usr/local/bin/python
 from pyhdf import SD
+from netCDF4 import Dataset  # http://code.google.com/p/netcdf4-python/
 from readFlag import *
 import grid
 import numpy as np
@@ -13,7 +14,10 @@ class varInfo():
  def __init__(s):
 	#defaults for debug
 	s.fileName = "CAL_LID_L2_333mCLay-ValStage1-V3-40.2020-01-29T20-56-48ZN.hdf"
+	s.fileName = "/vols/fs1/scratch/ortiz/DARDARNice_odran/2007/2007_01_02/DARNI_PRO_L2_v1.10_20070102031350.nc"
 	s.varName  = "Feature_Classification_Flags"
+	s.varName  = settings.FlagName
+
 	#get flags 6-7 and average them as: missing,1,0,1
 	s.VFMflagStart=settings.VFMflagStart
 	s.VFMflagFinish=settings.VFMflagFinish
@@ -52,9 +56,25 @@ class getFlag(varInfo):
 	else:
 		return fn
 
-#This get VertCoordinate, height and flags(VFM) from the top cloudy pixel of caliop profile
- def getData(s):
+ def getDataNC(s):
 	# open the hdf file
+	s.hdf = Dataset(s.fileName,'r')
+
+	s.data=s.getTopPixelVarNC(s.varName)
+	s.setNrows()
+
+	s.VertCoordinate=s.getTopPixelVarNC(settings.VertCoordinate)
+	s.VertCoordinate[np.where(s.VertCoordinate==-9999.0)]=np.nan
+
+	s.lat=s.getTopPixelVarNC1D(settings.lat)
+	s.lon=s.getTopPixelVarNC1D(settings.lon)
+	# Terminate access to the SD interface and close the file
+	s.hdf.close()
+
+#This get VertCoordinate, height and flags(VFM) from the top cloudy pixel of caliop profile
+ def getDataHDF(s):
+	# open the hdf file
+	print s.fileName
 	s.hdf = SD.SD(s.fileName)
 	 
 	s.data=s.getTopPixelVar(s.varName)
@@ -75,6 +95,18 @@ class getFlag(varInfo):
 	s.nrows = len(s.data)  
 
 	 
+ def getTopPixelVarNC(s,varName):
+		# select and read the sds data, select top pixel
+		data = s.hdf.variables[varName][:].astype(np.float)
+		#get top pixel
+		return data[::s.debugOffset,:]
+		#return data
+
+ def getTopPixelVarNC1D(s,varName):
+		# select and read the sds data, select top pixel
+		data = s.hdf.variables[varName][:].astype(np.float)
+		#get top pixel
+		return data[::s.debugOffset]
 	 
  def getTopPixelVar(s,varName):
 		# select and read the sds data, select top pixel
@@ -102,18 +134,23 @@ class getFlag(varInfo):
  def getLabelValue(s,byte):
 	return s.flagValues[s.getLabelIndex(byte)]
 
- def getValues(s):
+ def getFlagValues(s):
 	s.values=np.array(map(s.getLabelValueIf, s.data))
 
+ def getValues(s):
+	s.values=s.data
 
 #This functions take all data and set missing values when VertCoordinate is outside a range
  def sortDataIntoTempBin(s,top=0,bot=-3):
 	#print "from "+str(top)+" to "+str(bot)	
 	#print np.nanmean(s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )])	
 	temp=copy.copy(s.values)
+	#print s.VertCoordinate
 	temp[np.where( (bot>s.VertCoordinate) | (s.VertCoordinate>top) )]=np.nan
+	#print np.where( (bot>s.VertCoordinate) | (s.VertCoordinate>top) )
 	#return s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )]
-	return temp
+	tempavg=np.nanmean(temp, axis=1)
+	return tempavg
 
 
  def SortTbins(s,lowest=-42,highest=3,width=3):
@@ -162,15 +199,16 @@ if __name__=="__main__" :
 
 	print flag.getFileNameShort()
 
-	flag.getData()
-	flag.getValues()
-
-
+	flag.getDataNC()
+	if False:
+		flag.getFlagValues()
+	else:
+		flag.getValues()
 
 #Get values at VertCoordinate bins (mixed-phase)
 	binValues=flag.SortTbins(lowest=settings.VCoorLowest,highest=settings.VCoorHighest,width=settings.VCoorBinWidth)
 	for ti,tbinValues in enumerate(binValues):
-		print 'validPoints at'+settings.VertCoordinate+str(settings.VCoorLowest+settings.VCoorBinWidth*(ti+0.5))
+		print 'validPoints at '+settings.VertCoordinate+str(settings.VCoorLowest+settings.VCoorBinWidth*(ti+0.5))+" level"
 		print np.count_nonzero(~np.isnan(tbinValues))
 
 		fn=settings.VFMflagDef+"/"+	settings.VFMflagDef+"_"+settings.VCoorDef+"%02d"%ti+"/"+\
