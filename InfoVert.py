@@ -4,6 +4,17 @@ heightName="Layer_Top_Altitude"
 
 VertCoordinateType="TbinMPC"
 
+VertCoordinateType="Altitude"
+altitudeName="Altitude"
+
+if VertCoordinateType=="Altitude":
+	#MPC
+	VertCoordinate=altitudeName
+	VCoorDef="Alt"
+	VCoorLowest=8
+	VCoorHighest=30
+	VCoorBinWidth=2
+
 if VertCoordinateType=="TbinMPC":
 	#MPC
 	VertCoordinate=temperatureName

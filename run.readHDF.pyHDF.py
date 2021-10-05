@@ -14,6 +14,7 @@ class varInfo():
 	#defaults for debug
 	s.fileName = "CAL_LID_L2_333mCLay-ValStage1-V3-40.2020-01-29T20-56-48ZN.hdf"
 	s.varName  = "Feature_Classification_Flags"
+	s.varName  = "PSC_Feature_Mask"
 	#get flags 6-7 and average them as: missing,1,0,1
 	s.VFMflagStart=settings.VFMflagStart
 	s.VFMflagFinish=settings.VFMflagFinish
@@ -53,28 +54,43 @@ class getFlag(varInfo):
 		return fn
 
 #This get VertCoordinate, height and flags(VFM) from the top cloudy pixel of caliop profile
- def getData(s):
-	# open the hdf file
-	s.hdf = SD.SD(s.fileName)
-	 
-	s.data=s.getTopPixelVar(s.varName)
-	s.setNrows()
+ def getDataPSC(s):
+    # open the hdf file
+    s.hdf = SD.SD(s.fileName)
+     
+    s.data=s.getPixelVar(s.varName)
+    print s.data.shape
+    ##print s.debugOffset
+    ##print s.data
 
-	s.VertCoordinate=s.getTopPixelVar(settings.VertCoordinate)
-	s.VertCoordinate[np.where(s.VertCoordinate==-9999.0)]=np.nan
-
-
-	s.lat=s.getTopPixelVar("Latitude")
-	s.lon=s.getTopPixelVar("Longitude")
-	# Terminate access to the SD interface and close the file
-	s.hdf.end()
-
-
+    s.nrows = s.data.shape[1]
+    print s.nrows
+    
+    #s.VertCoordinate=s.getTopPixelVar(settings.VertCoordinate)
+    s.VertCoordinate=s.getVertVar(settings.VertCoordinate)
+    s.VertCoordinate[np.where(s.VertCoordinate==-9999.0)]=np.nan
+    #print s.VertCoordinate
+    
+    
+    s.lat=s.getPixelVar("Latitude")
+    s.lon=s.getPixelVar("Longitude")
+    # Terminate access to the SD interface and close the file
+    s.hdf.end()
+    
+    
  def setNrows(s):
 	# get dataset dimensions
 	s.nrows = len(s.data)  
 
 	 
+ def getVertVar(s,varName):
+		# select and read the sds data, select top pixel
+		s.sds = s.hdf.select(varName)
+		data = s.sds.get()
+		# Terminate access to the data set
+		s.sds.endaccess()
+		#get top pixel
+		return data
 	 
  def getTopPixelVar(s,varName):
 		# select and read the sds data, select top pixel
@@ -84,6 +100,18 @@ class getFlag(varInfo):
 		s.sds.endaccess()
 		#get top pixel
 		return data[::s.debugOffset,0]
+
+ def getPixelVar(s,varName):
+    # select and read the sds data, select top pixel
+    s.sds = s.hdf.select(varName)
+    data = s.sds.get()
+    # Terminate access to the data set
+    s.sds.endaccess()
+    #get top pixel
+    if len(data.shape) == 1:
+        return data[::s.debugOffset]
+    else:
+        return data[::s.debugOffset,:]
 
  #replace flag index(vfm) for flag value (user), given a condition
  def getLabelValueIf(s,byte):
@@ -103,17 +131,27 @@ class getFlag(varInfo):
 	return s.flagValues[s.getLabelIndex(byte)]
 
  def getValues(s):
-	s.values=np.array(map(s.getLabelValueIf, s.data))
+    if s.VFMflagStart == -1 : #if a float
+        s.values=s.data
+    else: #if a flag
+        s.values=np.array(map(s.getLabelValueIf, s.data))
 
+ def getValuesPSC(s):
+        s.values= (s.data>0).astype(float)
 
 #This functions take all data and set missing values when VertCoordinate is outside a range
  def sortDataIntoTempBin(s,top=0,bot=-3):
-	#print "from "+str(top)+" to "+str(bot)	
-	#print np.nanmean(s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )])	
-	temp=copy.copy(s.values)
-	temp[np.where( (bot>s.VertCoordinate) | (s.VertCoordinate>top) )]=np.nan
-	#return s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )]
-	return temp
+    #print "from "+str(top)+" to "+str(bot)	
+    #print np.nanmean(s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )])	
+    temp=copy.copy(s.values).astype(float)
+    if any(s.VertCoordinate == np.nan) :
+     temp=np.nan
+    else:
+     #print s.VertCoordinate
+     #print bot,top
+     temp[np.where( (bot>s.VertCoordinate) | (s.VertCoordinate>top) )]=np.nan
+    #return s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )]
+    return temp
 
 
  def SortTbins(s,lowest=-42,highest=3,width=3):
@@ -153,32 +191,30 @@ class getFlag(varInfo):
 import sys
 import os
 if __name__=="__main__" :
-	flag=getFlag()
-
-	#set debug if only one argument (python run)
-	debug=(len(sys.argv) == 1)
-	if not debug :
-		flag.fileName=sys.argv[1]
-
-	print flag.getFileNameShort()
-
-	flag.getData()
-	flag.getValues()
-
-
+    flag=getFlag()
+    
+    #set debug if only one argument (python run)
+    debug=(len(sys.argv) == 1)
+    if not debug :
+    	flag.fileName=sys.argv[1]
+    
+    print flag.getFileNameShort()
+    
+    flag.getDataPSC()
+    flag.getValuesPSC()
+    #print flag.values
 
 #Get values at VertCoordinate bins (mixed-phase)
-	binValues=flag.SortTbins(lowest=settings.VCoorLowest,highest=settings.VCoorHighest,width=settings.VCoorBinWidth)
-	for ti,tbinValues in enumerate(binValues):
-		print 'validPoints at'+settings.VertCoordinate+str(settings.VCoorLowest+settings.VCoorBinWidth*(ti+0.5))
-		print np.count_nonzero(~np.isnan(tbinValues))
-
-		fn=settings.VFMflagDef+"/"+	settings.VFMflagDef+"_"+settings.VCoorDef+"%02d"%ti+"/"+\
-						settings.VFMflagDef+"_"+settings.VCoorDef+"%02d"%ti+"_"+flag.getFileNameShort(debug)
-		grid.interpolate(tbinValues,flag.lat,flag.lon,fn=fn,vn=settings.VFMflagDef)
-
-	
-
+    for ti in range(flag.values.shape[1]):
+        tbinValues=flag.values[:,ti]
+        #print tbinValues
+    
+    	fn=settings.VFMflagDef+"/"+	settings.VFMflagDef+"_"+settings.VCoorDef+"%03d"%ti+"/"+\
+    					settings.VFMflagDef+"_"+settings.VCoorDef+"%03d"%ti+"_"+flag.getFileNameShort(debug)
+    	grid.interpolate(tbinValues,flag.lat,flag.lon,fn=fn,vn=settings.VFMflagDef)
+    
+    
+    
 #	flag.testTemperature()
 #	flag.testNrows()
 #	flag.testLabels()

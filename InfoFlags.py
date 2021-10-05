@@ -3,7 +3,7 @@ import numpy as np
 from InfoVert import *
 
 #how many pixels to skip (it while take year otherwise to process all 60k pixels per orbit)
-debugOffset=10
+debugOffset=1000
 
 VFMflagDef="RAF_dust"
 VFMflagDef="RAF_ALLbc"
@@ -12,6 +12,14 @@ VFMflagDef="AerFrac"
 VFMflagDef="CC"
 VFMflagDef="CI2CT"
 
+VFMflagDef="PSC"
+debugOffset=10
+
+if VFMflagDef=="PSC":
+	#Cloud_Ice_to_total_Cloud"
+	VFMflagStart=-1 #get flags 6-7 
+	VFMflagFinish=-1
+	flagValues=[np.nan,1,0,1] #average them as: missing,1,0,1
 
 if VFMflagDef=="CI2CT":
 	#Cloud_Ice_to_total_Cloud"

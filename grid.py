@@ -77,7 +77,7 @@ class interpolation():
 	s.varContainedTuples=s.getMaskWhereVarContained()
 
 	for vari,ituple in enumerate(s.varContainedTuples):
-		if not np.isnan(s.var[vari]):
+		if not (np.isnan(s.var[vari])):
 			s.varGrid[ituple]+=s.var[vari]
 			s.varGridCount[ituple]+=1
 			#print s.x[vari],s.y[vari]
