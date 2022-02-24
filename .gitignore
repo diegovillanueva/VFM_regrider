@@ -1,2 +1,4 @@
+*.pyc
+trash
 out
 out_year

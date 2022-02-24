@@ -35,6 +35,10 @@ generateArchiveFile() {
 		done <"$file"
 	done
 
+exit
+
+##join
+
 VertCor=TbinMPC
 var=CI2CT
 
