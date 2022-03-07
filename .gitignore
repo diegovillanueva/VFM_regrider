@@ -1,4 +1,7 @@
 *.pyc
+*.err
+err
+last
 trash
 out
 out_year

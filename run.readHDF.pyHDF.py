@@ -12,10 +12,11 @@ import InfoFlags as settings
 class varInfo():
  def __init__(s):
 	#defaults for debug
+	s.fileName = "CAL_LID_L2_PSCMask-Prov-V1-11.2021-11-30T00-00-00ZN.hdf"
 	#s.fileName = "CAL_LID_L2_333mCLay-ValStage1-V3-40.2020-01-29T20-56-48ZN.hdf"
 	#s.varName  = "Feature_Classification_Flags"
-	s.fileName = "CAL_LID_L2_PSCMask-Prov-V1-11.2021-11-30T00-00-00ZN.hdf"
-	s.varName  = "PSC_Feature_Mask"
+	#s.varName  = "PSC_Feature_Mask"
+	s.varName  = settings.varName
 	#get flags 6-7 and average them as: missing,1,0,1
 	s.VFMflagStart=settings.VFMflagStart
 	s.VFMflagFinish=settings.VFMflagFinish
@@ -139,6 +140,18 @@ class getFlag(varInfo):
 
  def getValuesPSC(s):
         s.values= (s.data>0).astype(float)
+ def getRawValues(s):
+        s.rawvalues= s.data.astype(float)
+
+        #get psc mask
+        s.varName='PSC_Feature_Mask'
+        s.getDataPSC()        
+        s.getValuesPSC()        
+
+        #now filter rawvalues by the psc mask (s.values)
+        s.rawvalues[s.values!=1]= np.nan
+        #and copy filtered values to new s.values
+        s.values=s.rawvalues
 
 #This functions take all data and set missing values when VertCoordinate is outside a range
  def sortDataIntoTempBin(s,top=0,bot=-3):
@@ -202,7 +215,11 @@ if __name__=="__main__" :
     print flag.getFileNameShort()
     
     flag.getDataPSC()
-    flag.getValuesPSC()
+
+    if flag.varName == "PSC_Feature_Mask":
+        flag.getValuesPSC()
+    else: 
+        flag.getRawValues()
     #print flag.values
 
 #Get values at VertCoordinate bins (mixed-phase)
