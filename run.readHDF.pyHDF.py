@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 #!/usr/local/bin/python
+#import sys
+#sys.path.append('/work/bb1114/b380602/PAPER_godzilla/VFM_regrider/pyhdf-0.9.0')
+#sys.path.append('/work/bb1114/b380602/PAPER_godzilla/VFM_regrider/pyhdf-0.9.0/build')
+#import os
 from pyhdf import SD
+
 from readFlag import *
 import grid
 import numpy as np
 np.set_printoptions(	threshold=sys.maxsize,
-			formatter={'float': lambda x: "{0:2.0f}".format(x)})
+			formatter={'float': lambda x: "{0:2.0f}".format(x)} )
 import copy
 import InfoFlags as settings
 
@@ -40,50 +45,74 @@ class getFlag(varInfo):
 
 	s.debugOffset=settings.debugOffset
 
+	#for tests
 	s.offset=100
 	s.skip=1000
 	 
  def getFileNameShort(s,debug=False):
 	base=os.path.basename(s.fileName)
-	fn=os.path.splitext(base)[0]
-	#fn=base
+	#fn=os.path.splitext(base)[0]
+	fn=base
 	if debug:
 		return "test"
 	else:
 		return fn
 
-#This get VertCoordinate, height and flags(VFM) from the top cloudy pixel of caliop profile
  def getData(s):
+
+	archiveFile = open(s.fileName,'r')
+
+	for ifile,singleFileName in enumerate(archiveFile):
+		print ifile,singleFileName
+		if ifile==0:
+			s.lon,s.lat,s.VertCoordinate,s.data=s.getXYZdata(singleFileName)
+		else: 
+			templon,templat,tempVertCoordinate,tempdata=s.getXYZdata(singleFileName)
+			s.lon=np.concatenate((s.lon,templon))
+			s.lat=np.concatenate((s.lat,templat))
+			s.VertCoordinate=np.concatenate((s.VertCoordinate,tempVertCoordinate))
+			s.data=np.concatenate((s.data,tempdata))
+			print(s.data.size)
+			
+
+#This get VertCoordinate, height and flags(VFM) from the top cloudy pixel of caliop profile
+ def getXYZdata(s,fileName):
 	# open the hdf file
-	s.hdf = SD.SD(s.fileName)
+	#print os.path.exists(fileName.rstrip())
+	s.hdf = SD.SD(fileName.rstrip())
 	 
-	s.data=s.getTopPixelVar(s.varName)
-	s.setNrows()
+	locdata=s.getFeaturesAs1D(s.varName)
+	#s.setNrows()
 
-	s.VertCoordinate=s.getTopPixelVar(settings.VertCoordinate)
-	s.VertCoordinate[np.where(s.VertCoordinate==-9999.0)]=np.nan
+	locVertCoordinate=s.getFeaturesAs1D(settings.VertCoordinate)
+	locVertCoordinate[np.where(locVertCoordinate==-9999.0)]=np.nan
 
 
-	s.lat=s.getTopPixelVar("Latitude")
-	s.lon=s.getTopPixelVar("Longitude")
+	loclat=s.getFeaturesAs1D("Latitude")
+	loclon=s.getFeaturesAs1D("Longitude")
 	# Terminate access to the SD interface and close the file
 	s.hdf.end()
+	return loclon,loclat,locVertCoordinate,locdata
 
 
- def setNrows(s):
-	# get dataset dimensions
-	s.nrows = len(s.data)  
+# def setNrows(s):
+#	# get dataset dimensions
+#	s.nrows = len(s.data)  
 
 	 
 	 
- def getTopPixelVar(s,varName):
+ def getFeaturesAs1D(s,varName):
 		# select and read the sds data, select top pixel
 		s.sds = s.hdf.select(varName)
 		data = s.sds.get()
 		# Terminate access to the data set
 		s.sds.endaccess()
-		#get top pixel
+		#get top feature: for VFM vertCoor is 5 (features) and 0 is the topmost feature
 		return data[::s.debugOffset,0]
+		#get all features for VFM (5) and flatten array
+		#return data[::s.debugOffset,:].flatten(order='C')
+		#get top cloud feature: for VFM vertCoor is 5 (features) and 0 is the topmost feature
+		#to implement:
 
  #replace flag index(vfm) for flag value (user), given a condition
  def getLabelValueIf(s,byte):
@@ -111,7 +140,12 @@ class getFlag(varInfo):
 	#print "from "+str(top)+" to "+str(bot)	
 	#print np.nanmean(s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )])	
 	temp=copy.copy(s.values)
-	temp[np.where( (bot>s.VertCoordinate) | (s.VertCoordinate>top) )]=np.nan
+	#temp[ np.where( (bot>=s.VertCoordinate) | (s.VertCoordinate>=top) | np.isnan(s.VertCoordinate) )]=np.nan
+	temp[ np.where( (s.VertCoordinate<=bot) | (top<=s.VertCoordinate) )]=np.nan #put nan outside temprange
+	#temp[ np.where( np.isnan(s.VertCoordinate) )]=np.nan #this hapens auto
+	#temp[ np.where( s.values == 0 ) ]=0 # this happens autom
+	#print s.values,bot,top,s.VertCoordinate,temp
+	#exit()
 	#return s.values[np.where( (bot<s.VertCoordinate) & (s.VertCoordinate<top) )]
 	return temp
 
@@ -143,7 +177,7 @@ class getFlag(varInfo):
  def testNrows(s):
 	print s.data.shape 
  def testLabels(s):
-	for i in range(s.offset,s.nrows,s.skip):
+	for i in range(s.offset,len(s.data),s.skip):
 		istr=get_bitflag_by_range(s.data[i],s.sds_flagBegin,s.sds_flagLength)
 		if istr == 2:
 			print '{:2.0f}'.format(s.VertCoordinate[i])
@@ -175,7 +209,7 @@ if __name__=="__main__" :
 
 		fn=settings.VFMflagDef+"/"+	settings.VFMflagDef+"_"+settings.VCoorDef+"%02d"%ti+"/"+\
 						settings.VFMflagDef+"_"+settings.VCoorDef+"%02d"%ti+"_"+flag.getFileNameShort(debug)
-		grid.interpolate(tbinValues,flag.lat,flag.lon,fn=fn,vn=settings.VFMflagDef)
+		grid.interpolate(tbinValues,flag.lat,flag.lon,fn=fn,vn=settings.VFMflagDef,gridCT=settings.gridCountThreshold)
 
 	
 

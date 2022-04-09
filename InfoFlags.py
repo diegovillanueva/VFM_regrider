@@ -5,12 +5,19 @@ from InfoVert import *
 #how many pixels to skip (it while take year otherwise to process all 60k pixels per orbit)
 debugOffset=10
 
+#min number of features to calculate a valid value
+gridCountThreshold=100 #debugOffset*gridCountThreshold should be about 100
+
 VFMflagDef="RAF_dust"
 VFMflagDef="RAF_ALLbc"
 VFMflagDef="RAF_smoke"
 VFMflagDef="AerFrac"
+
 VFMflagDef="CC"
+gridCountThreshold=100 #debugOffset*gridCountThreshold should be about 100
+
 VFMflagDef="CI2CT"
+gridCountThreshold=1 #debugOffset*gridCountThreshold should be about 100
 
 
 if VFMflagDef=="CI2CT":
@@ -18,6 +25,11 @@ if VFMflagDef=="CI2CT":
 	VFMflagStart=6 #get flags 6-7 
 	VFMflagFinish=7
 	flagValues=[np.nan,1,0,1] #average them as: missing,1,0,1
+#flags 6-7
+#0 = unknown / not determined
+#1 = ice
+#2 = water
+#3 = oriented ice crystals
 
 if VFMflagDef=="CC" or VFMflagDef=="AerFrac":
 	#CC

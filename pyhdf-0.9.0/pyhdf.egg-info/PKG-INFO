@@ -6,7 +6,6 @@ Home-page: http://www.sourceforge.net/projects/pysclint
 Author: HDF-EOS Tools and Information Center
 Author-email: eoshelp@hdfgroup.org
 License: public
-Description-Content-Type: UNKNOWN
 Description: The pyhdf package wraps the functionality
          of the HDF version 4 library inside a Python OOP
          framework. The SD (scientific dataset), VS

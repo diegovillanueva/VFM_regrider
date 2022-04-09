@@ -1,0 +1,9 @@
+temp*
+*err
+pyhdf-0.9.0/
+out/
+HDF4.2r1/
+out_joined/
+tags
+test/
+trash/

@@ -7,14 +7,15 @@ import numpy as np
 from scipy.interpolate import griddata
 
 import sys
-sys.path.append('/vols/fs1/work/ortiz/binPython/')
-import netcdf
+sys.path.append('/pf/b/b380602/binPy/')
+import netcdf #local netcdf.py created by DV
 
 class interpolation():
  def __init__(s):
 	s.ntest=1000
 	s.interpolMethods=['nearest','cubic','linear']
 	s.setInterpolMethodByIndex(0)
+	s.GridCountTreshold=0
 
 #tests begin
  def quickTest(s):
@@ -69,6 +70,7 @@ class interpolation():
  def rebin(s):
 	#only this template works and has dimensions lat,lon , find out why!!!
 	varTemplate=np.swapaxes(s.xGrid,0,1)
+
 	s.varGrid = np.zeros_like(varTemplate).astype(float)
 	s.varGridCount = np.zeros_like(varTemplate)
 
@@ -84,8 +86,8 @@ class interpolation():
 
 	valid=s.varGridCount!=0
 	s.varGrid[valid]=s.varGrid[valid]/s.varGridCount[valid]
-	#mask out if no count
-	s.varGrid[s.varGridCount==0]=np.nan
+	#mask out if count below limit
+	s.varGrid[s.varGridCount<=s.GridCountTreshold]=np.nan
 
  def nearest_neighbors(s,longArray, grid):
 	return np.array([s.nearest_neighbor(grid,xi) for xi in longArray])
@@ -117,16 +119,17 @@ class interpolation():
 					var=s.varGrid,
 					varname=varname)
 #deprecated
- def interpolate(s):
-	s.varGrid = griddata((s.x,s.y),s.var,(s.xGrid,s.yGrid),method=s.interpolMethod)
+# def interpolate(s):
+#	s.varGrid = griddata((s.x,s.y),s.var,(s.xGrid,s.yGrid),method=s.interpolMethod)
 
 if __name__=='__main__':
 	test=interpolation()
 	#test.testInterpolMethods()
 	test.quickTest()
 
-def interpolate(data,lat,lon,fn="test",vn="varname"):
+def interpolate(data,lat,lon,fn="test",vn="varname",gridCT=0):
 	interpol=interpolation()
+	interpol.GridCountTreshold=gridCT
 
 	interpol.getData(lat,lon,data)
 	interpol.setGrid(2,30,slat=-89,slon=-165)
