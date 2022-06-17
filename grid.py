@@ -7,7 +7,7 @@ import numpy as np
 from scipy.interpolate import griddata
 
 import sys
-sys.path.append('/pf/b/b380602/binPy/')
+sys.path.append('binPy/')
 import netcdf #local netcdf.py created by DV
 
 class interpolation():
