@@ -17,7 +17,7 @@ import InfoFlags as settings
 class varInfo():
  def __init__(s):
 	#defaults for debug
-	s.fileName = "CAL_LID_L2_333mCLay-ValStage1-V3-40.2020-01-29T20-56-48ZN.hdf"
+	s.fileName = "test_CAL_LID_L2_333mCLay-V3-40.hdf"
 	s.varName  = "Feature_Classification_Flags"
 	#get flags 6-7 and average them as: missing,1,0,1
 	s.VFMflagStart=settings.VFMflagStart

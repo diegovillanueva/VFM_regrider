@@ -1,7 +1,7 @@
 pyhdf-0.9.0
 HDF4.2r1
 
-*.pyc
+#*.pyc
 *err
 
 temp*
